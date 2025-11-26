@@ -1,4 +1,6 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+// src/app/autenticacion-y-cuentas/login.component.ts
+
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
@@ -14,7 +16,7 @@ import { LoginService } from '../../services/Login/login-service';
 })
 export class Login implements OnInit {
   errorMessage: string | null = null;
-  loginDto: LoginDto= new LoginDto();
+  loginDto: LoginDto = new LoginDto(); // ya tiene email/password vacíos
 
   constructor(
     private loginService: LoginService,
@@ -27,28 +29,37 @@ export class Login implements OnInit {
     this.loginUser();
   }
 
-loginUser() {
-  this.errorMessage = null;
-  this.loginService.loginSolv(this.loginDto).subscribe(
-    (data) => {
-      if (data) {
-        this.navegarHomeScreen();
-      } else {
-        this.errorMessage = 'Las credenciales no coinciden, intenta de nuevo.';
-      }
-    },
-    (error) => {
-      console.error('Error al iniciar sesión:', error);
-      alert("Las credenciales no coinciden, intenta de nuevo.");
-    }
-  );
-}
+  loginUser() {
+    this.errorMessage = null;
 
-  ngOnInit(): void {
-    
+    this.loginService.loginSolv(this.loginDto).subscribe({
+      next: (resp) => {
+        // resp: { token, persona, role }
+
+        // Guardar en localStorage
+        localStorage.setItem('auth_token', resp.token);
+        localStorage.setItem('auth_user', JSON.stringify(resp.persona));
+        localStorage.setItem('auth_role', resp.role);
+
+        this.navegarHomeScreen();
+      },
+      error: (error) => {
+        console.error('Error al iniciar sesión:', error);
+
+        if (error.status === 401) {
+          this.errorMessage = 'Credenciales inválidas. Intenta de nuevo.';
+        } else {
+          this.errorMessage = 'Ocurrió un error al iniciar sesión.';
+        }
+
+        alert(this.errorMessage);
+      }
+    });
   }
-  navegarHomeScreen(){
+
+  ngOnInit(): void {}
+
+  navegarHomeScreen() {
     this.router.navigate(['/home']);
   }
-   
 }
