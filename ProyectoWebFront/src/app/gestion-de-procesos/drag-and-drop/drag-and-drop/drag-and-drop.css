@@ -138,10 +138,10 @@
   background: #0b1120;
   border-radius: 16px;
   box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
-  position: relative;          /* 👈 importante para posicionar líneas/nodos */
+  position: relative;
   overflow: auto;
   padding: 16px;
-  z-index: 1;                  /* el lienzo va por debajo de los nodos */
+  z-index: 1;
 }
 
 /* grid de puntos tipo editor */
@@ -163,22 +163,18 @@
 /* nodos en lienzo */
 .lienzo-nodo {
   position: relative;
-  z-index: 5;                 /* 👈 por encima del lienzo */
+  z-index: 5; /* por encima del fondo */
   min-width: 140px;
   padding: 10px 14px;
   border-radius: 12px;
   margin-bottom: 8px;
   font-size: 14px;
   font-weight: 500;
-  cursor: grab;
+  cursor: pointer; /* importante para el click */
   border: 1px solid transparent;
   background: rgba(15, 23, 42, 0.92);
   color: #e5e7eb;
   display: inline-block;
-}
-
-.lienzo-nodo:active {
-  cursor: grabbing;
 }
 
 /* estilos por tipo */
@@ -220,7 +216,7 @@
 .panel-propiedades {
   background: rgba(15, 23, 42, 0.9);
   border-radius: 16px;
-  box-shadow: 0 18px 45px rgba[15, 23, 42, 0.9];
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -329,7 +325,6 @@
 
 /* ========= FIX DRAG & DROP CDK ========= */
 
-/* Previsualización mientras arrastras */
 .cdk-drag-preview {
   box-sizing: border-box;
   border-radius: 12px;
@@ -341,26 +336,19 @@
   z-index: 9999 !important;
 }
 
-/* “hueco” que queda mientras arrastras */
 .cdk-drag-placeholder {
   opacity: 0.3;
   border-radius: 12px;
   border: 1px dashed rgba(148, 163, 184, 0.8);
 }
 
-/* Suaviza el movimiento de los nodos dentro del drop-list */
 .cdk-drop-list-dragging .lienzo-nodo {
   transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
 }
 
-/* Evitar que algo tape los nodos / preview */
+/* Evitar que algo tape paleta / props */
 .panel-paleta,
 .panel-propiedades {
   position: relative;
   z-index: 10;
-}
-
-/* Pequeño hack para que nada raro intercepte el drag */
-* {
-  -webkit-user-drag: none;
 }

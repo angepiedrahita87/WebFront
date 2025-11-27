@@ -1,9 +1,11 @@
+<!-- src/app/gestion-de-procesos/registro-procesos/registro-procesos.html -->
+
 <div class="registro-container">
   <div class="registro-card">
     <h2>Registro de proceso</h2>
 
     <form (ngSubmit)="onRegistrarProceso()" #procesoForm="ngForm">
-          <div class="input-group">
+      <div class="input-group">
         <label for="name">Nombre del proceso</label>
         <input
           type="text"
@@ -63,6 +65,8 @@
           placeholder="Ej: 900123456"
         />
       </div>
+
+      <!-- Actividades -->
       <div class="input-group">
         <label for="activityIds">Actividades (IDs)</label>
         <select
@@ -71,10 +75,8 @@
           name="activityIds"
           [(ngModel)]="procesoDto.activityIds"
           size="5"
-        >          <option
-            *ngFor="let a of activitiesCatalogo"
-            [ngValue]="a.id"
-          >
+        >
+          <option *ngFor="let a of activitiesCatalogo" [ngValue]="a.id">
             {{ a.id }} — {{ a.name }}
           </option>
         </select>
@@ -91,11 +93,7 @@
           [(ngModel)]="procesoDto.archIds"
           size="5"
         >
-          <!-- archesCatálogo: {id:number, actividadI:number, actividadD:number}[] -->
-          <option
-            *ngFor="let ar of archsCatalogo"
-            [ngValue]="ar.id"
-          >
+          <option *ngFor="let ar of archsCatalogo" [ngValue]="ar.id">
             {{ ar.id }} — ({{ ar.actividadI }} ➜ {{ ar.actividadD }})
           </option>
         </select>
@@ -111,22 +109,19 @@
           [(ngModel)]="procesoDto.gatewayIds"
           size="5"
         >
-          <!-- gatewaysCatálogo: {id:number, type:string}[] -->
-          <option
-            *ngFor="let g of gatewaysCatalogo"
-            [ngValue]="g.id"
-          >
+          <option *ngFor="let g of gatewaysCatalogo" [ngValue]="g.id">
             {{ g.id }} — {{ g.type }}
           </option>
         </select>
       </div>
+
       <button type="submit" [disabled]="procesoForm.invalid">
         Guardar proceso
       </button>
 
       <p class="login-text">
         ¿Volver?
-        <a routerLink="/procesos">Lista de procesos</a>
+        <a routerLink="/consultar-procesos">Lista de procesos</a>
       </p>
     </form>
   </div>

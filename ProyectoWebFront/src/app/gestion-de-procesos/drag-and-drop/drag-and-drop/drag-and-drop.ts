@@ -21,8 +21,8 @@ interface NodeTemplate {
 }
 
 interface EditorNode extends NodeTemplate {
-  uid: string;        // id único en el front
-  backendId?: number; // cuando lo enlaces a Actividad/Gateway en BD
+  uid: string;         // id solo del front
+  backendId?: number;  // id de Actividad / Gateway en BD (cuando se guarde)
 }
 
 @Component({
@@ -36,6 +36,7 @@ export class DragAndDrop implements OnInit {
   // ========= PROCESOS =========
   procesos: ProcesoDto[] = [];
   procesoSeleccionado: ProcesoDto | null = null;
+  procesoSeleccionadoId: number | null = null;
 
   // ========= PALETA =========
   paleta: NodeTemplate[] = [
@@ -49,7 +50,7 @@ export class DragAndDrop implements OnInit {
   nodosCanvas: EditorNode[] = [];
   nodoSeleccionado: EditorNode | null = null;
 
-  // ========= PANEL DERECHO =========
+  // ========= FORM DEL PANEL DERECHO =========
   panelNombre = '';
   panelDescripcion = '';
   panelTipoActividad = '';
@@ -66,35 +67,38 @@ export class DragAndDrop implements OnInit {
     this.procesoService.listar().subscribe({
       next: (data) => {
         this.procesos = data ?? [];
-        console.log('Procesos para editor:', this.procesos);
+        console.log('Procesos para editor =>', this.procesos);
       },
       error: (err) => {
-        console.error('Error cargando procesos en editor', err);
+        console.error('Error cargando procesos en drag-and-drop', err);
       },
     });
   }
 
-  onSeleccionarProceso(idStr: string) {
-    if (!idStr) {
+  onSeleccionarProceso(id: number | null) {
+    console.log('onSeleccionarProceso() =>', id);
+
+    if (!id) {
       this.procesoSeleccionado = null;
+      this.procesoSeleccionadoId = null;
       this.nodosCanvas = [];
       this.nodoSeleccionado = null;
       return;
     }
 
-    const id = Number(idStr);
     const found = this.procesos.find((p) => p.id === id) ?? null;
     this.procesoSeleccionado = found;
+    this.procesoSeleccionadoId = found?.id ?? null;
 
     console.log('Proceso seleccionado =>', this.procesoSeleccionado);
   }
 
   // ----------------- DRAG & DROP -----------------
   onDropNodo(event: CdkDragDrop<any>) {
-    const template = event.item.data as NodeTemplate | undefined;
+    const template: NodeTemplate = event.item.data as NodeTemplate;
 
-    if (!template) {
-      console.warn('Drop sin template');
+    if (!this.procesoSeleccionado) {
+      alert('Primero selecciona un proceso.');
       return;
     }
 
@@ -106,23 +110,26 @@ export class DragAndDrop implements OnInit {
       label: template.label,
     };
 
-    this.nodosCanvas.push(nuevo);
+    this.nodosCanvas = [...this.nodosCanvas, nuevo];
+    console.log('Nodo añadido al lienzo =>', nuevo);
 
-    // 👉 hacer selección automática
-    setTimeout(() => {
-      this.seleccionarNodo(nuevo);
-    }, 10);
+    // opcional: lo seleccionamos de una vez
+    this.seleccionarNodo(nuevo);
   }
 
+  // ----------------- CLICK NODO -----------------
   seleccionarNodo(node: EditorNode) {
+    console.log('🔥 CLICK EN NODO =>', node);
     this.nodoSeleccionado = node;
 
-    this.panelNombre = node.label || '';
+    this.panelNombre = node.label;
     this.panelDescripcion = '';
     this.panelTipoActividad = '';
     this.panelTipoGateway = '';
+  }
 
-    console.log('Nodo seleccionado =>', node);
+  limpiarSeleccionLienzo() {
+    this.nodoSeleccionado = null;
   }
 
   // ----------------- PANEL DERECHO -----------------
@@ -130,9 +137,12 @@ export class DragAndDrop implements OnInit {
     if (!this.nodoSeleccionado) return;
 
     this.nodoSeleccionado.label =
-      this.panelNombre.trim() || this.nodoSeleccionado.label;
+      this.panelNombre || this.nodoSeleccionado.label;
 
-    console.log('Nodo actualizado =>', this.nodoSeleccionado);
-    alert('Datos guardados (solo front por ahora).');
+    // TODO: aquí luego conectas ActivityService / GatewayService
+    // usando this.procesoSeleccionadoId y this.nodoSeleccionado.type
+
+    console.log('Nodo actualizado (front) =>', this.nodoSeleccionado);
+    alert('Datos del nodo guardados (solo front por ahora).');
   }
 }

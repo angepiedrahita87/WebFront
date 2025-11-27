@@ -9,10 +9,11 @@
       <label for="procesoSelect"><strong>Proceso:</strong></label>
       <select
         id="procesoSelect"
-        (change)="onSeleccionarProceso($any($event.target).value)"
+        [ngModel]="procesoSeleccionadoId"
+        (ngModelChange)="onSeleccionarProceso($event)"
       >
-        <option value="">-- Selecciona un proceso --</option>
-        <option *ngFor="let p of procesos" [value]="p.id">
+        <option [ngValue]="null">-- Selecciona un proceso --</option>
+        <option *ngFor="let p of procesos" [ngValue]="p.id">
           {{ p.name }}
         </option>
       </select>
@@ -46,15 +47,15 @@
       class="panel-lienzo"
       cdkDropList
       (cdkDropListDropped)="onDropNodo($event)"
+      (click)="limpiarSeleccionLienzo()"
     >
       <div
         class="lienzo-nodo"
         *ngFor="let node of nodosCanvas"
-        cdkDrag
-        (click)="seleccionarNodo(node)"
+        (click)="seleccionarNodo(node); $event.stopPropagation()"
         [ngClass]="[
           node.type.toLowerCase(),
-          node.uid === nodoSeleccionado?.uid ? 'selected' : ''
+          node === nodoSeleccionado ? 'selected' : ''
         ]"
       >
         {{ node.label }}
@@ -67,17 +68,15 @@
 
     <!-- PANEL DERECHO: PROPIEDADES -->
     <div class="panel-propiedades">
-      <ng-container *ngIf="nodoSeleccionado as n; else noSelection">
+      <ng-container *ngIf="nodoSeleccionado; else noSelection">
         <h3>
-          {{
-            n.type === 'ACTIVITY'
-              ? 'Crear / editar Actividad'
-              : n.type === 'GATEWAY'
-              ? 'Configurar Gateway'
-              : n.type === 'START'
-              ? 'Nodo de Inicio'
-              : 'Nodo de Fin'
-          }}
+          {{ nodoSeleccionado.type === 'ACTIVITY'
+            ? 'Crear / editar Actividad'
+            : nodoSeleccionado.type === 'GATEWAY'
+            ? 'Configurar Gateway'
+            : nodoSeleccionado.type === 'START'
+            ? 'Nodo de Inicio'
+            : 'Nodo de Fin' }}
         </h3>
 
         <form (ngSubmit)="guardarDatosNodo()" class="prop-form">
@@ -86,7 +85,7 @@
             <input type="text" [(ngModel)]="panelNombre" name="nombre" />
           </label>
 
-          <label *ngIf="n.type === 'ACTIVITY'">
+          <label *ngIf="nodoSeleccionado.type === 'ACTIVITY'">
             Descripción
             <textarea
               rows="3"
@@ -95,7 +94,7 @@
             ></textarea>
           </label>
 
-          <label *ngIf="n.type === 'ACTIVITY'">
+          <label *ngIf="nodoSeleccionado.type === 'ACTIVITY'">
             Tipo de actividad
             <input
               type="text"
@@ -105,7 +104,7 @@
             />
           </label>
 
-          <label *ngIf="n.type === 'GATEWAY'">
+          <label *ngIf="nodoSeleccionado.type === 'GATEWAY'">
             Tipo de gateway
             <input
               type="text"
