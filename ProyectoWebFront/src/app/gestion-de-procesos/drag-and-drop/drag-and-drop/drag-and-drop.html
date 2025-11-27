@@ -1,0 +1,64 @@
+<!-- src/app/gestion-de-procesos/mostrar-procesos/mostrar-procesos.html -->
+
+<div class="procesos-container">
+  <h2 class="title">Lista de Procesos</h2>
+
+  <!-- Error -->
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div>
+
+  <!-- Cargando -->
+  <div *ngIf="loading" class="loading">
+    Cargando procesos...
+  </div>
+
+  <!-- Sin resultados -->
+  <div *ngIf="!loading && procesos.length === 0" class="empty">
+    No hay procesos registrados.
+  </div>
+
+  <!-- Lista de procesos con drag & drop -->
+  <div
+    class="procesos-grid"
+    *ngIf="procesos.length > 0 && !loading"
+    cdkDropList
+    [cdkDropListData]="procesos"
+    (cdkDropListDropped)="onDrop($event)"
+  >
+    <div
+      class="proceso-card"
+      *ngFor="let proc of procesos; let i = index"
+      cdkDrag
+    >
+      <div class="card-header">
+        <h3>{{ proc.name || 'Sin nombre' }}</h3>
+        <span class="badge">ID {{ proc.id }}</span>
+      </div>
+
+      <p class="description">
+        {{ proc.description || 'Sin descripción' }}
+      </p>
+
+      <div class="meta">
+        <span class="chip category">{{ proc.category || 'Sin categoría' }}</span>
+        <span class="chip status">{{ proc.status }}</span>
+
+        <!-- Mostrar orden si quieres debuggear -->
+        <span class="chip small">Orden: {{ proc.orden ?? '-' }}</span>
+      </div>
+
+      <div class="actions">
+        <!-- Botón eliminar solo si es ADMIN -->
+        <button
+          *ngIf="puedeEliminar()"
+          type="button"
+          class="btn btn-danger"
+          (click)="onDelete(proc)"
+        >
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

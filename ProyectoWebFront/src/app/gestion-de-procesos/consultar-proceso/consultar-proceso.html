@@ -1,17 +1,27 @@
+<!-- src/app/gestion-de-procesos/consultar-proceso/consultar-proceso.html -->
+
 <div class="procesos-container">
   <h2 class="title">Lista de Procesos</h2>
-  <div *ngIf="errorMessage" class="error-message">
+
+  <!-- Cargando -->
+  <div *ngIf="loading" class="loading">
+    Cargando procesos...
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="!loading && errorMessage" class="error-message">
     {{ errorMessage }}
   </div>
 
-  <div *ngIf="!loading && procesos.length === 0" class="empty">
+  <!-- Sin resultados -->
+  <div *ngIf="!loading && !errorMessage && procesos.length === 0" class="empty">
     No hay procesos registrados.
   </div>
 
-  <div *ngIf="loading" class="loading">Cargando procesos...</div>
-
-  <div class="procesos-grid" *ngIf="procesos.length > 0 && !loading">
+  <!-- Lista de procesos -->
+  <div class="procesos-grid" *ngIf="!loading && !errorMessage && procesos.length > 0">
     <div class="proceso-card" *ngFor="let proc of procesos">
+
       <div class="card-header">
         <h3>{{ proc.name || 'Sin nombre' }}</h3>
         <span class="badge">ID {{ proc.id }}</span>
@@ -21,19 +31,22 @@
         <p><strong>Descripción:</strong> {{ proc.description || '—' }}</p>
         <p><strong>Categoría:</strong> {{ proc.category || '—' }}</p>
         <p><strong>Estado:</strong> {{ proc.status }}</p>
+
         <p><strong>Organización:</strong>
-             {{ proc.organizationId !== null ? proc.organizationId : '—' }}</p>
+          {{ proc.organizationId != null ? proc.organizationId : '—' }}
+        </p>
 
         <div class="subdata">
-        <p><strong>Actividades:</strong> {{ proc.activityIds?.length ?? 0 }}</p>
-        <p><strong>Arcos:</strong> {{ proc.archIds?.length ?? 0 }}</p>
-        <p><strong>Gateways:</strong> {{ proc.gatewayIds?.length ?? 0 }}</p>
+          <p><strong>Actividades:</strong> {{ proc.activityIds?.length || 0 }}</p>
+          <p><strong>Arcos:</strong> {{ proc.archIds?.length || 0 }}</p>
+          <p><strong>Gateways:</strong> {{ proc.gatewayIds?.length || 0 }}</p>
         </div>
-
       </div>
 
       <div class="card-actions">
-        <button class="btn-delete" (click)="eliminarProceso(proc.id)">Eliminar</button>
+        <button class="btn-delete" *ngIf="isAdmin()" (click)="eliminarProceso(proc.id)">
+          Eliminar
+        </button>
       </div>
     </div>
   </div>

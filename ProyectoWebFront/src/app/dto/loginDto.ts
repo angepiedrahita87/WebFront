@@ -12,6 +12,6 @@ export class AuthResponseDto {
   constructor(
     public token: string,
     public persona: UsuarioDto,
-    public role: Role
+    public roleName: Role
   ) {}
 }

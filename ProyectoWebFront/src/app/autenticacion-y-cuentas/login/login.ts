@@ -16,12 +16,12 @@ import { LoginService } from '../../services/Login/login-service';
 })
 export class Login implements OnInit {
   errorMessage: string | null = null;
-  loginDto: LoginDto = new LoginDto(); // ya tiene email/password vacíos
+  loginDto: LoginDto = new LoginDto(); // email/password vacíos por defecto
 
   constructor(
     private loginService: LoginService,
     private router: Router
-  ) {}  
+  ) {}
 
   onSubmit() {
     console.log('Correo:', this.loginDto.email);
@@ -34,12 +34,13 @@ export class Login implements OnInit {
 
     this.loginService.loginSolv(this.loginDto).subscribe({
       next: (resp) => {
-        // resp: { token, persona, role }
+        console.log("RESPUESTA DEL LOGIN ===>", resp);
+        // resp = { token, persona, roleName }
 
         // Guardar en localStorage
         localStorage.setItem('auth_token', resp.token);
         localStorage.setItem('auth_user', JSON.stringify(resp.persona));
-        localStorage.setItem('auth_role', resp.role);
+        localStorage.setItem('auth_role', resp.roleName); // 👈 ojo aquí
 
         this.navegarHomeScreen();
       },

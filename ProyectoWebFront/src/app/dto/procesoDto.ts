@@ -1,3 +1,5 @@
+// src/app/dto/procesoDto.ts
+
 export type ProcessStatus = 'DRAFT' | 'PUBLISHED' | 'INACTIVE';
 
 export class ProcesoDto {
@@ -10,6 +12,7 @@ export class ProcesoDto {
     public organizationId?: number,
     public activityIds: number[] = [],
     public archIds: number[] = [],
-    public gatewayIds: number[] = []
+    public gatewayIds: number[] = [],
+    public orden?: number
   ) {}
 }

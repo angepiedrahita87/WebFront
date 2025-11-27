@@ -27,6 +27,10 @@ export class HomeScreen implements OnInit {
     this.router.navigate(['/editar-proceso']);
   }
 
+  navegarDragAndDrop() {
+  this.router.navigate(['/drag-and-drop']);
+}
+
   // ======== ACTIVIDADES ========
   navegarCrearActividad() {
     this.router.navigate(['/crear-actividad']);

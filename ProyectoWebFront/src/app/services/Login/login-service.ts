@@ -17,6 +17,7 @@ export class LoginService {
   }
 
   loginSolv(loginDto: LoginDto): Observable<AuthResponseDto> {
+    console.log('Payload login =>', loginDto);
     return this.httpClient.post<AuthResponseDto>(this.urlLogin, loginDto);
   }
 }
