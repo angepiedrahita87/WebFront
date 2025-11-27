@@ -1,99 +1,138 @@
-import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
-import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { ProcesoDto } from '../../../dto/procesoDto';
-import { ProcesoService } from '../../../services';
+// src/app/gestion-de-procesos/drag-and-drop/drag-and-drop/drag-and-drop.ts
 
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import {
+  CdkDrag,
+  CdkDropList,
+  CdkDragDrop,
+  DragDropModule,
+} from '@angular/cdk/drag-drop';
+
+import { ProcesoService } from '../../../services/proceso.service';
+import { ProcesoDto } from '../../../dto/procesoDto';
+
+type NodeType = 'START' | 'ACTIVITY' | 'GATEWAY' | 'END';
+
+interface NodeTemplate {
+  type: NodeType;
+  label: string;
+}
+
+interface EditorNode extends NodeTemplate {
+  uid: string;        // id único en el front
+  backendId?: number; // cuando lo enlaces a Actividad/Gateway en BD
+}
 
 @Component({
   selector: 'app-drag-and-drop',
   standalone: true,
-  imports: [CommonModule, DragDropModule],
+  imports: [CommonModule, FormsModule, DragDropModule, CdkDrag, CdkDropList],
   templateUrl: './drag-and-drop.html',
-  styleUrl: './drag-and-drop.css',
+  styleUrls: ['./drag-and-drop.css'],
 })
 export class DragAndDrop implements OnInit {
+  // ========= PROCESOS =========
   procesos: ProcesoDto[] = [];
-  loading = false;
-  errorMessage = '';
+  procesoSeleccionado: ProcesoDto | null = null;
 
-  authRole: string | null = null;
-  readonly isBrowser = typeof window !== 'undefined';
+  // ========= PALETA =========
+  paleta: NodeTemplate[] = [
+    { type: 'START',    label: 'Inicio' },
+    { type: 'ACTIVITY', label: 'Actividad' },
+    { type: 'GATEWAY',  label: 'Gateway' },
+    { type: 'END',      label: 'Fin' },
+  ];
 
-  private readonly procesoService = inject(ProcesoService);
+  // ========= LIENZO =========
+  nodosCanvas: EditorNode[] = [];
+  nodoSeleccionado: EditorNode | null = null;
+
+  // ========= PANEL DERECHO =========
+  panelNombre = '';
+  panelDescripcion = '';
+  panelTipoActividad = '';
+  panelTipoGateway = '';
+
+  constructor(private readonly procesoService: ProcesoService) {}
 
   ngOnInit(): void {
-    if (this.isBrowser) {
-      this.authRole = localStorage.getItem('auth_role');
-    }
     this.cargarProcesos();
   }
 
-  cargarProcesos(): void {
-    if (!this.isBrowser) {
+  // ----------------- PROCESOS -----------------
+  cargarProcesos() {
+    this.procesoService.listar().subscribe({
+      next: (data) => {
+        this.procesos = data ?? [];
+        console.log('Procesos para editor:', this.procesos);
+      },
+      error: (err) => {
+        console.error('Error cargando procesos en editor', err);
+      },
+    });
+  }
+
+  onSeleccionarProceso(idStr: string) {
+    if (!idStr) {
+      this.procesoSeleccionado = null;
+      this.nodosCanvas = [];
+      this.nodoSeleccionado = null;
       return;
     }
 
-    this.loading = true;
-    this.errorMessage = '';
+    const id = Number(idStr);
+    const found = this.procesos.find((p) => p.id === id) ?? null;
+    this.procesoSeleccionado = found;
 
-    this.procesoService.listar().subscribe({
-      next: (data) => {
-        console.log('Procesos para drag & drop:', data);
-        this.procesos = data ?? [];
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Error al listar procesos', err);
-        this.errorMessage = 'Error al cargar los procesos.';
-        this.loading = false;
-      },
-    });
+    console.log('Proceso seleccionado =>', this.procesoSeleccionado);
   }
 
-  puedeEliminar(): boolean {
-    return this.authRole === 'ADMIN';
-  }
+  // ----------------- DRAG & DROP -----------------
+  onDropNodo(event: CdkDragDrop<any>) {
+    const template = event.item.data as NodeTemplate | undefined;
 
-  onDrop(event: CdkDragDrop<ProcesoDto[]>): void {
-    if (event.previousIndex === event.currentIndex) return;
-
-    // 1. mover en memoria
-    moveItemInArray(this.procesos, event.previousIndex, event.currentIndex);
-
-    // 2. recalcular orden local
-    this.procesos.forEach((p, index) => (p.orden = index));
-
-    // 3. mandar sólo el que se movió
-    const moved = this.procesos[event.currentIndex];
-    if (!moved || moved.id == null) return;
-
-    this.procesoService
-      .actualizarOrden(moved.id, moved.orden ?? event.currentIndex)
-      .subscribe({
-        error: (err) => {
-          console.error('Error al actualizar orden', err);
-          // rollback simple
-          this.cargarProcesos();
-        },
-      });
-  }
-
-  onDelete(proc: ProcesoDto): void {
-    if (proc.id == null) return;
-    if (!this.puedeEliminar()) return;
-
-    if (this.isBrowser) {
-      const ok = confirm(`¿Eliminar el proceso "${proc.name}"?`);
-      if (!ok) return;
+    if (!template) {
+      console.warn('Drop sin template');
+      return;
     }
 
-    this.procesoService.eliminar(proc.id, false).subscribe({
-      next: () => this.cargarProcesos(),
-      error: (err) => {
-        console.error('Error al eliminar proceso', err);
-        this.errorMessage = 'Error al eliminar el proceso.';
-      },
-    });
+    const nuevo: EditorNode = {
+      uid: crypto.randomUUID
+        ? crypto.randomUUID()
+        : Math.random().toString(36).substring(2),
+      type: template.type,
+      label: template.label,
+    };
+
+    this.nodosCanvas.push(nuevo);
+
+    // 👉 hacer selección automática
+    setTimeout(() => {
+      this.seleccionarNodo(nuevo);
+    }, 10);
+  }
+
+  seleccionarNodo(node: EditorNode) {
+    this.nodoSeleccionado = node;
+
+    this.panelNombre = node.label || '';
+    this.panelDescripcion = '';
+    this.panelTipoActividad = '';
+    this.panelTipoGateway = '';
+
+    console.log('Nodo seleccionado =>', node);
+  }
+
+  // ----------------- PANEL DERECHO -----------------
+  guardarDatosNodo() {
+    if (!this.nodoSeleccionado) return;
+
+    this.nodoSeleccionado.label =
+      this.panelNombre.trim() || this.nodoSeleccionado.label;
+
+    console.log('Nodo actualizado =>', this.nodoSeleccionado);
+    alert('Datos guardados (solo front por ahora).');
   }
 }

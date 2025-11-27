@@ -1,84 +1,366 @@
-/* src/app/gestion-de-procesos/mostrar-procesos/mostrar-procesos.css */
+/* ========= LAYOUT GENERAL ========= */
 
-.procesos-container {
-  padding: 1.5rem;
+.editor-container {
+  height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 24px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 40%, #0f172a 100%);
+  color: #f9fafb;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
 }
 
-.title {
-  margin-bottom: 1rem;
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
 }
 
-.error-message {
-  color: #f44336;
-  margin-bottom: 0.75rem;
+.editor-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
 }
 
-.loading,
-.empty {
-  margin-top: 1rem;
-  font-style: italic;
+.proceso-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.6);
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
 }
 
-.procesos-grid {
+.proceso-selector label {
+  font-size: 14px;
+}
+
+.proceso-selector select {
+  background: transparent;
+  border: none;
+  color: #e5e7eb;
+  font-size: 14px;
+  outline: none;
+}
+
+/* body: 3 columnas */
+.editor-body {
+  flex: 1;
   display: grid;
-  gap: 1rem;
-  margin-top: 1rem;
+  grid-template-columns: 260px minmax(0, 1fr) 280px;
+  gap: 16px;
+  min-height: 0;
 }
 
-.proceso-card {
-  padding: 1rem;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  background: #fff;
+/* ========= PANEL IZQUIERDO (PALETA) ========= */
+
+.panel-paleta {
+  background: rgba(15, 23, 42, 0.85);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.75);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel-paleta h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.paleta-item {
   cursor: grab;
 }
 
-.proceso-card:active {
+.paleta-item:active {
   cursor: grabbing;
 }
 
-.card-header {
+.paleta-badge {
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 500;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  background: #0f172a;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    border-color 0.12s ease,
+    background 0.12s ease;
 }
 
-.badge {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 999px;
-  background: #eee;
+.paleta-badge.START {
+  background: rgba(22, 163, 74, 0.15);
+  border-color: rgba(34, 197, 94, 0.8);
 }
 
-.meta {
-  margin-top: 0.5rem;
+.paleta-badge.ACTIVITY {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.8);
+}
+
+.paleta-badge.GATEWAY {
+  background: rgba(234, 179, 8, 0.15);
+  border-color: rgba(234, 179, 8, 0.9);
+}
+
+.paleta-badge.END {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.9);
+}
+
+.paleta-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.75);
+  border-color: #e5e7eb;
+}
+
+.hint {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+/* ========= LIENZO CENTRAL ========= */
+
+.panel-lienzo {
+  background: #0b1120;
+  border-radius: 16px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+  position: relative;          /* 👈 importante para posicionar líneas/nodos */
+  overflow: auto;
+  padding: 16px;
+  z-index: 1;                  /* el lienzo va por debajo de los nodos */
+}
+
+/* grid de puntos tipo editor */
+.panel-lienzo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    circle,
+    rgba(148, 163, 184, 0.18) 1px,
+    transparent 0
+  );
+  background-size: 18px 18px;
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* nodos en lienzo */
+.lienzo-nodo {
+  position: relative;
+  z-index: 5;                 /* 👈 por encima del lienzo */
+  min-width: 140px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: grab;
+  border: 1px solid transparent;
+  background: rgba(15, 23, 42, 0.92);
+  color: #e5e7eb;
+  display: inline-block;
+}
+
+.lienzo-nodo:active {
+  cursor: grabbing;
+}
+
+/* estilos por tipo */
+.lienzo-nodo.start {
+  background: #16a34a;
+}
+
+.lienzo-nodo.activity {
+  background: #2563eb;
+}
+
+.lienzo-nodo.gateway {
+  background: #eab308;
+  color: #111827;
+}
+
+.lienzo-nodo.end {
+  background: #ef4444;
+}
+
+/* seleccionado */
+.lienzo-nodo.selected {
+  outline: 2px solid #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.25);
+}
+
+/* texto vacío */
+.lienzo-empty {
+  position: relative;
+  z-index: 1;
+  margin-top: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* ========= PANEL DERECHO (PROPIEDADES) ========= */
+
+.panel-propiedades {
+  background: rgba(15, 23, 42, 0.9);
+  border-radius: 16px;
+  box-shadow: 0 18px 45px rgba[15, 23, 42, 0.9];
+  padding: 16px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.chip {
-  font-size: 0.75rem;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  background-color: #f5f5f5;
+.panel-propiedades h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
 }
 
-.chip.small {
-  opacity: 0.7;
-}
-
-.actions {
-  margin-top: 0.75rem;
+.prop-form {
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
 }
 
-.btn.btn-danger {
+.prop-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.prop-form input,
+.prop-form textarea {
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  background: rgba(15, 23, 42, 0.8);
+  color: #e5e7eb;
+  padding: 8px 10px;
+  font-size: 13px;
+  outline: none;
+}
+
+.prop-form input:focus,
+.prop-form textarea:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.5);
+}
+
+.btn-guardar {
+  margin-top: 4px;
+  border-radius: 999px;
   border: none;
-  padding: 0.4rem 0.8rem;
-  border-radius: 4px;
-  background-color: #e53935;
-  color: #fff;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #0f172a;
+  align-self: flex-end;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease,
+    filter 0.1s ease;
+}
+
+.btn-guardar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px rgba(21, 128, 61, 0.7);
+  filter: brightness(1.05);
+}
+
+.no-selection {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* ========= RESPONSIVE ========= */
+
+@media (max-width: 1024px) {
+  .editor-body {
+    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-rows: auto 260px;
+    grid-template-areas:
+      "paleta lienzo"
+      "paleta props";
+  }
+
+  .panel-paleta {
+    grid-area: paleta;
+  }
+
+  .panel-lienzo {
+    grid-area: lienzo;
+  }
+
+  .panel-propiedades {
+    grid-area: props;
+  }
+}
+
+@media (max-width: 768px) {
+  .editor-container {
+    padding: 12px;
+  }
+
+  .editor-body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+  }
+}
+
+/* ========= FIX DRAG & DROP CDK ========= */
+
+/* Previsualización mientras arrastras */
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: #020617;
+  color: #f9fafb;
+  border: 1px solid rgba(148, 163, 184, 0.9);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
+  z-index: 9999 !important;
+}
+
+/* “hueco” que queda mientras arrastras */
+.cdk-drag-placeholder {
+  opacity: 0.3;
+  border-radius: 12px;
+  border: 1px dashed rgba(148, 163, 184, 0.8);
+}
+
+/* Suaviza el movimiento de los nodos dentro del drop-list */
+.cdk-drop-list-dragging .lienzo-nodo {
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Evitar que algo tape los nodos / preview */
+.panel-paleta,
+.panel-propiedades {
+  position: relative;
+  z-index: 10;
+}
+
+/* Pequeño hack para que nada raro intercepte el drag */
+* {
+  -webkit-user-drag: none;
 }

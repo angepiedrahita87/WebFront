@@ -1,64 +1,132 @@
-<!-- src/app/gestion-de-procesos/mostrar-procesos/mostrar-procesos.html -->
+<!-- src/app/gestion-de-procesos/drag-and-drop/drag-and-drop/drag-and-drop.html -->
 
-<div class="procesos-container">
-  <h2 class="title">Lista de Procesos</h2>
+<div class="editor-container">
+  <!-- PANEL SUPERIOR: selección de proceso -->
+  <div class="editor-header">
+    <h2>Editor de procesos</h2>
 
-  <!-- Error -->
-  <div *ngIf="errorMessage" class="error-message">
-    {{ errorMessage }}
+    <div class="proceso-selector">
+      <label for="procesoSelect"><strong>Proceso:</strong></label>
+      <select
+        id="procesoSelect"
+        (change)="onSeleccionarProceso($any($event.target).value)"
+      >
+        <option value="">-- Selecciona un proceso --</option>
+        <option *ngFor="let p of procesos" [value]="p.id">
+          {{ p.name }}
+        </option>
+      </select>
+    </div>
   </div>
 
-  <!-- Cargando -->
-  <div *ngIf="loading" class="loading">
-    Cargando procesos...
-  </div>
+  <div class="editor-body">
+    <!-- PALETA IZQUIERDA -->
+    <div class="panel-paleta">
+      <h3>Paleta de nodos</h3>
 
-  <!-- Sin resultados -->
-  <div *ngIf="!loading && procesos.length === 0" class="empty">
-    No hay procesos registrados.
-  </div>
-
-  <!-- Lista de procesos con drag & drop -->
-  <div
-    class="procesos-grid"
-    *ngIf="procesos.length > 0 && !loading"
-    cdkDropList
-    [cdkDropListData]="procesos"
-    (cdkDropListDropped)="onDrop($event)"
-  >
-    <div
-      class="proceso-card"
-      *ngFor="let proc of procesos; let i = index"
-      cdkDrag
-    >
-      <div class="card-header">
-        <h3>{{ proc.name || 'Sin nombre' }}</h3>
-        <span class="badge">ID {{ proc.id }}</span>
+      <div
+        class="paleta-item"
+        *ngFor="let item of paleta"
+        cdkDrag
+        [cdkDragData]="item"
+      >
+        <div class="paleta-badge" [ngClass]="item.type">
+          {{ item.label }}
+        </div>
       </div>
 
-      <p class="description">
-        {{ proc.description || 'Sin descripción' }}
+      <p class="hint">
+        Arrastra los nodos al lienzo y luego haz clic en ellos para editar sus
+        propiedades.
       </p>
+    </div>
 
-      <div class="meta">
-        <span class="chip category">{{ proc.category || 'Sin categoría' }}</span>
-        <span class="chip status">{{ proc.status }}</span>
-
-        <!-- Mostrar orden si quieres debuggear -->
-        <span class="chip small">Orden: {{ proc.orden ?? '-' }}</span>
+    <!-- LIENZO CENTRAL -->
+    <div
+      class="panel-lienzo"
+      cdkDropList
+      (cdkDropListDropped)="onDropNodo($event)"
+    >
+      <div
+        class="lienzo-nodo"
+        *ngFor="let node of nodosCanvas"
+        cdkDrag
+        (click)="seleccionarNodo(node)"
+        [ngClass]="[
+          node.type.toLowerCase(),
+          node.uid === nodoSeleccionado?.uid ? 'selected' : ''
+        ]"
+      >
+        {{ node.label }}
       </div>
 
-      <div class="actions">
-        <!-- Botón eliminar solo si es ADMIN -->
-        <button
-          *ngIf="puedeEliminar()"
-          type="button"
-          class="btn btn-danger"
-          (click)="onDelete(proc)"
-        >
-          Eliminar
-        </button>
+      <div *ngIf="nodosCanvas.length === 0" class="lienzo-empty">
+        Arrastra un nodo desde la paleta para comenzar.
       </div>
+    </div>
+
+    <!-- PANEL DERECHO: PROPIEDADES -->
+    <div class="panel-propiedades">
+      <ng-container *ngIf="nodoSeleccionado as n; else noSelection">
+        <h3>
+          {{
+            n.type === 'ACTIVITY'
+              ? 'Crear / editar Actividad'
+              : n.type === 'GATEWAY'
+              ? 'Configurar Gateway'
+              : n.type === 'START'
+              ? 'Nodo de Inicio'
+              : 'Nodo de Fin'
+          }}
+        </h3>
+
+        <form (ngSubmit)="guardarDatosNodo()" class="prop-form">
+          <label>
+            Nombre
+            <input type="text" [(ngModel)]="panelNombre" name="nombre" />
+          </label>
+
+          <label *ngIf="n.type === 'ACTIVITY'">
+            Descripción
+            <textarea
+              rows="3"
+              [(ngModel)]="panelDescripcion"
+              name="descripcion"
+            ></textarea>
+          </label>
+
+          <label *ngIf="n.type === 'ACTIVITY'">
+            Tipo de actividad
+            <input
+              type="text"
+              [(ngModel)]="panelTipoActividad"
+              name="tipoActividad"
+              placeholder="Manual, automática..."
+            />
+          </label>
+
+          <label *ngIf="n.type === 'GATEWAY'">
+            Tipo de gateway
+            <input
+              type="text"
+              [(ngModel)]="panelTipoGateway"
+              name="tipoGateway"
+              placeholder="Exclusivo, paralelo..."
+            />
+          </label>
+
+          <button type="submit" class="btn-guardar">
+            Guardar nodo
+          </button>
+        </form>
+      </ng-container>
+
+      <ng-template #noSelection>
+        <div class="no-selection">
+          <p><strong>Ningún nodo seleccionado</strong></p>
+          <p>Haz clic en un nodo del lienzo para editar sus propiedades.</p>
+        </div>
+      </ng-template>
     </div>
   </div>
 </div>
