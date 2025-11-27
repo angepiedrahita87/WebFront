@@ -2,89 +2,84 @@
 
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
 import { ProcesoDto } from '../../dto/procesoDto';
-import { ProcesoService } from '../../services';
+import { ProcesoService } from '../../services/proceso.service';
 import { ActividadService } from '../../services/Activity/actividad-service';
 
-type ProcessStatus = 'DRAFT' | 'PUBLISHED';
+type ProcessStatus = 'DRAFT' | 'ACTIVE' | 'INACTIVE';
 
 @Component({
   selector: 'app-registro-procesos',
   standalone: true,
-  imports: [FormsModule, CommonModule, RouterModule],
+  imports: [FormsModule, CommonModule],
   templateUrl: './registro-procesos.html',
   styleUrls: ['./registro-procesos.css'],
 })
 export class RegistroProcesos implements OnInit {
 
-  constructor(
-    private router: Router,
-    private procesoService: ProcesoService,
-    private actividadService: ActividadService,
-  ) {}
-
-  // estados que entiende el back (según lo que ya tienes: DRAFT / PUBLISHED)
-  statuses: ProcessStatus[] = ['DRAFT', 'PUBLISHED'];
-
-  // DTO del proceso
+  statuses: ProcessStatus[] = ['DRAFT', 'ACTIVE', 'INACTIVE'];
   procesoDto: ProcesoDto = new ProcesoDto();
 
-  // catálogos para los <select multiple>
-  activitiesCatalogo: { id: number; name: string }[] = [];
+  activitiesCatalogo = [
+    { id: 1, name: 'Crear solicitud' },
+    { id: 2, name: 'Validar datos' },
+  ];
+
   archsCatalogo = [
     { id: 10, actividadI: 1, actividadD: 2 },
     { id: 11, actividadI: 2, actividadD: 3 },
   ];
+
   gatewaysCatalogo = [
     { id: 100, type: 'EXCLUSIVE' },
     { id: 101, type: 'PARALLEL' },
   ];
 
-  ngOnInit(): void {
-    // inicializar arrays del DTO (por si vienen en undefined)
-    this.procesoDto.activityIds  = this.procesoDto.activityIds  ?? [];
-    this.procesoDto.archIds      = this.procesoDto.archIds      ?? [];
-    this.procesoDto.gatewayIds   = this.procesoDto.gatewayIds   ?? [];
+  constructor(
+    private router: Router,
+    private procesoService: ProcesoService,
+    private actividadService: ActividadService
+  ) {}
 
-    // cargar actividades desde el back
+  ngOnInit(): void {
+    // catálogo real de actividades
     this.actividadService.list().subscribe({
-      next: (r: any[]) => {
-        // asumo que r viene con {id, name}; si el nombre es distinto, ajusta aquí
-        this.activitiesCatalogo = r.map(a => ({
-          id: a.id,
-          name: a.name ?? a.nombre ?? `Actividad ${a.id}`,
-        }));
-      },
-      error: (err) => {
-        console.error('Error cargando actividades', err);
-      },
+      next: (r) => (this.activitiesCatalogo = r),
+      error: (err) => console.error('Error cargando actividades', err),
     });
 
-    // cuando tengas endpoints reales, reemplazas estos mocks:
+    // Cuando tengas endpoints de arcos/gateways, descomenta:
     // this.actividadService.getArches().subscribe(r => this.archsCatalogo = r);
     // this.actividadService.getGateways().subscribe(r => this.gatewaysCatalogo = r);
   }
 
-  // ----- Acciones del formulario -----
+  // submit del formulario
   onRegistrarProceso() {
-    // por si acaso, aseguramos que los arrays existen
-    this.procesoDto.activityIds = this.procesoDto.activityIds ?? [];
-    this.procesoDto.archIds     = this.procesoDto.archIds     ?? [];
-    this.procesoDto.gatewayIds  = this.procesoDto.gatewayIds  ?? [];
-
-    console.log('DTO que se va a enviar =>', this.procesoDto);
     this.crearProceso();
   }
 
   crearProceso() {
+    // Validación mínima como en Postman
+    if (!this.procesoDto.name || !this.procesoDto.description || !this.procesoDto.category) {
+      alert('Nombre, descripción y categoría son obligatorios.');
+      return;
+    }
+
+    console.log('DTO que se envía => ', {
+      name: this.procesoDto.name,
+      description: this.procesoDto.description,
+      category: this.procesoDto.category,
+    });
+
+    // OJO: ProcesoService.crear ya filtra los campos.
     this.procesoService.crear(this.procesoDto).subscribe({
       next: (resp) => {
-        console.log('Proceso creado =>', resp);
-        alert('Proceso creado correctamente');
-        // ajusta la ruta según tu app
+        console.log('Proceso creado OK =>', resp);
+        alert('Proceso creado correctamente 🎉');
+        // ajusta la ruta a la que quieres volver
         this.router.navigate(['/consultar-procesos']);
       },
       error: (err) => {

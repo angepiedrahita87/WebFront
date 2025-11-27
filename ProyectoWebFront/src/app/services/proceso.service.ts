@@ -21,11 +21,6 @@ export class ProcesoService {
   constructor(private http: HttpClient) {}
 
   // ============= LISTAR PROCESOS =============
-  /**
-   * Lista procesos de la organización del usuario logueado.
-   * El backend ya infiere la organización desde el token,
-   * así que solo mandamos opcionalmente el status.
-   */
   listar(status?: ProcessStatus): Observable<ProcesoDto[]> {
     let params = new HttpParams();
     if (status) {
@@ -40,17 +35,24 @@ export class ProcesoService {
   }
 
   // ============= CREAR =============
+  /**
+   * Crea un proceso. Aunque reciba un ProcesoDto, el backend
+   * SOLO acepta name, description y category (como en Postman),
+   * así que filtramos el payload aquí.
+   */
   crear(proceso: ProcesoDto, actorEmail?: string): Observable<ProcesoDto> {
     const headers = this.buildHeaders(actorEmail, true);
-    return this.http.post<ProcesoDto>(`${this.baseUrl}/create`, proceso, { headers });
+
+    const payload = {
+      name: proceso.name,
+      description: proceso.description,
+      category: proceso.category,
+    };
+
+    return this.http.post<ProcesoDto>(`${this.baseUrl}/create`, payload, { headers });
   }
 
   // ============= ACTUALIZAR (GENÉRICO) =============
-  /**
-   * Actualiza un proceso con los campos que envíes.
-   * Como en el backend solo se actualiza lo que no viene null,
-   * puedes mandar solo name/description/status/orden, etc.
-   */
   actualizar(proceso: ProcesoDto, actorEmail?: string): Observable<ProcesoDto> {
     if (proceso.id == null) {
       throw new Error('El proceso debe tener un ID para actualizarse.');
@@ -59,11 +61,7 @@ export class ProcesoService {
     return this.http.put<ProcesoDto>(`${this.baseUrl}/update/${proceso.id}`, proceso, { headers });
   }
 
-  // ============= ACTUALIZAR SOLO ORDEN (para drag & drop) =============
-  /**
-   * Helper específico para cambiar solo el orden desde drag & drop.
-   * Así desde el componente solo mandas id + nuevo orden.
-   */
+  // ============= ACTUALIZAR SOLO ORDEN =============
   actualizarOrden(id: number, orden: number, actorEmail?: string): Observable<ProcesoDto> {
     const headers = this.buildHeaders(actorEmail, true);
     const body: Partial<ProcesoDto> = { orden };
